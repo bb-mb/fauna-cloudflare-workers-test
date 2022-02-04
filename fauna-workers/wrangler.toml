@@ -1,7 +1,7 @@
 name = "fauna-workers"
 type = "webpack"
 
-account_id = ""
+account_id = "6e3de5109fd71dcff7bef6e10d5d0180"
 workers_dev = true
 route = ""
 zone_id = ""

@@ -12,5 +12,9 @@
   "license": "MIT",
   "devDependencies": {
     "prettier": "^1.18.2"
+  },
+  "dependencies": {
+    "faunadb": "^4.5.0",
+    "itty-router": "^2.4.10"
   }
 }

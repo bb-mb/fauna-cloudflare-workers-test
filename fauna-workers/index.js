@@ -1,12 +1,69 @@
-addEventListener('fetch', event => {
-  event.respondWith(handleRequest(event.request))
+import faunadb from 'faunadb'
+import { Router } from 'itty-router'
+import { getFaunaError } from './utils'
+
+const router = Router()
+
+const faunaClient = new faunadb.Client({
+  secret: FAUNA_SECRET,
 })
-/**
- * Respond with hello worker text
- * @param {Request} request
- */
-async function handleRequest(request) {
-  return new Response('Hello worker!', {
-    headers: { 'content-type': 'text/plain' },
-  })
-}
+
+const { Create, Collection, Get, Ref } = faunadb.query
+
+router.post('/products', async req => {
+  try {
+    const { serialNumber, title, weightLbs } = await req.json()
+
+    const result = await faunaClient.query(
+      Create(Collection('Products'), {
+        data: {
+          serialNumber,
+          title,
+          weightLbs,
+          quantity: 0,
+        },
+      }),
+    )
+
+    return new Response(
+      JSON.stringify({
+        productId: result.ref.id,
+      }),
+    )
+  } catch (error) {
+    const faunaError = getFaunaError(error)
+    return new Response(JSON.stringify(faunaError), {
+      status: faunaError.status,
+    })
+  }
+})
+
+router.get('/products/:productId', async req => {
+  try {
+    const { productId } = req.params
+
+    const start = Date.now()
+
+    const result = await faunaClient.query(
+      Get(Ref(Collection('Products'), productId)),
+    )
+
+    const time = Date.now() - start
+
+    return new Response(JSON.stringify({ ...result.data, time }))
+  } catch (error) {
+    console.log(error)
+    const faunaError = getFaunaError(error)
+
+    return new Response(JSON.stringify(faunaError), {
+      status: faunaError.status,
+    })
+  }
+})
+
+router.get('/favicon.ico', () => new Response('hello'))
+router.get('/', () => new Response('hello'))
+
+addEventListener('fetch', event => {
+  event.respondWith(router.handle(event.request))
+})
