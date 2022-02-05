@@ -8,7 +8,7 @@ const faunaClient = new faunadb.Client({
   secret: FAUNA_SECRET,
 })
 
-const { Create, Collection, Get, Ref } = faunadb.query
+const { Create, Collection, Get, Ref, Paginate, Documents } = faunadb.query
 
 router.post('/products', async req => {
   try {
@@ -46,6 +46,27 @@ router.get('/products/:productId', async req => {
 
     const result = await faunaClient.query(
       Get(Ref(Collection('Products'), productId)),
+    )
+
+    const time = Date.now() - start
+
+    return new Response(JSON.stringify({ ...result.data, time }))
+  } catch (error) {
+    console.log(error)
+    const faunaError = getFaunaError(error)
+
+    return new Response(JSON.stringify(faunaError), {
+      status: faunaError.status,
+    })
+  }
+})
+
+router.get('/products', async req => {
+  try {
+    const start = Date.now()
+
+    const result = await faunaClient.query(
+      Paginate(Documents(Collection('Products'))),
     )
 
     const time = Date.now() - start
